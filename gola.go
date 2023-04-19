@@ -4,6 +4,7 @@ import (
 	"context"
 
 	"github.com/aws/aws-lambda-go/events"
+	httpheadername "github.com/kklab-com/gone-httpheadername"
 	buf "github.com/kklab-com/goth-bytebuf"
 	erresponse "github.com/kklab-com/goth-erresponse"
 )
@@ -58,6 +59,24 @@ func wrapErrorResponse(err erresponse.ErrorResponse, resp Response) {
 		JSONResponse(buf.NewByteBufString(err.Error()))
 }
 
+func CORSHelper(request Request, response Response) {
+	headers := map[string]string{}
+	if v := request.GetHeader(httpheadername.Origin); v == "null" {
+		response.AddHeader(httpheadername.AccessControlAllowOrigin, "*")
+	} else {
+		response.AddHeader(httpheadername.AccessControlAllowOrigin, v)
+	}
+
+	if str := request.GetHeader(httpheadername.AccessControlRequestHeaders); str != "" {
+		response.AddHeader(httpheadername.AccessControlAllowHeaders, str)
+	}
+
+	if str := request.GetHeader(httpheadername.AccessControlRequestMethod); str != "" {
+		response.AddHeader(httpheadername.AccessControlAllowMethods, str)
+		headers["access-control-allow-methods"] = str
+	}
+}
+
 type Handler interface {
 	Run(ctx context.Context, request Request, response Response) error
 }
@@ -66,6 +85,7 @@ type DefaultHandler struct {
 }
 
 func (d *DefaultHandler) Run(ctx context.Context, request Request, response Response) error {
+	CORSHelper(request, response)
 	response.SetContentType("text/plain")
 	return nil
 }
@@ -74,6 +94,7 @@ type DefaultNotFoundHandler struct {
 }
 
 func (d *DefaultNotFoundHandler) Run(ctx context.Context, request Request, response Response) error {
+	CORSHelper(request, response)
 	response.
 		SetStatusCode(erresponse.NotFound.ErrorStatusCode()).
 		JSONResponse(buf.NewByteBufString(erresponse.NotFound.Error()))
@@ -85,6 +106,7 @@ type DefaultServerErrorHandler struct {
 }
 
 func (d *DefaultServerErrorHandler) Run(ctx context.Context, request Request, response Response) error {
+	CORSHelper(request, response)
 	response.
 		SetStatusCode(erresponse.ServerError.ErrorStatusCode()).
 		JSONResponse(buf.NewByteBufString(erresponse.ServerError.Error()))
