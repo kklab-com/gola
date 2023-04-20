@@ -36,7 +36,12 @@ func (n *_Node) path() string {
 	rtn := ""
 	var current Node = n
 	for {
-		rtn = fmt.Sprintf("%s/%s", current.Name(), rtn)
+		if current.NodeType() == NodeTypeEndPoint {
+			rtn = fmt.Sprintf("%s/:%s/%s", current.Name(), current.ParameterName(), rtn)
+		} else {
+			rtn = fmt.Sprintf("%s/%s", current.Name(), rtn)
+		}
+
 		if current.Parent() == nil {
 			break
 		}
@@ -82,6 +87,26 @@ func NewRoute() *Route {
 		children: map[string]Node{},
 		nodeType: NodeTypeRoot,
 	}}
+}
+
+func (r *Route) traverse(node Node, result map[string]string) {
+	if len(node.Children()) > 0 {
+		for _, n := range node.Children() {
+			r.traverse(n, result)
+		}
+	}
+
+	switch node.NodeType() {
+	case NodeTypeRoot:
+	case NodeTypeEndPoint:
+	case NodeTypeRecursive:
+	case NodeTypeNamespace:
+	}
+}
+
+func (r *Route) String() string {
+	r.root.Children()
+	return ""
 }
 
 func (r *Route) SetRootHandlers(handlers ...Handler) *Route {
