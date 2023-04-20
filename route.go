@@ -132,9 +132,9 @@ func (r *Route) FindNode(path string) Node {
 	return routeNode
 }
 
-func (r *Route) RouteNode(path string) (node Node, parameters map[string]*PathParameter, isLast bool) {
+func (r *Route) RouteNode(path string) (node Node, parameters map[string]string, isLast bool) {
 	path = strings.TrimLeft(strings.TrimRight(path, "/"), "/")
-	params := map[string]*PathParameter{}
+	params := map[string]string{}
 	if path == "" {
 		return r.root, nil, true
 	}
@@ -152,7 +152,7 @@ func (r *Route) RouteNode(path string) (node Node, parameters map[string]*PathPa
 					if current == r.root && part != "" {
 						return nil, nil, false
 					} else {
-						params[current.ParameterName()] = &PathParameter{value: part}
+						params[current.ParameterName()] = part
 						return current, params, false
 					}
 				} else {
@@ -161,7 +161,7 @@ func (r *Route) RouteNode(path string) (node Node, parameters map[string]*PathPa
 			} else {
 				if next == nil {
 					if _, f := current.Children()[parts[idx+1]]; f {
-						params[current.ParameterName()] = &PathParameter{value: part}
+						params[current.ParameterName()] = part
 						continue
 					} else {
 						return nil, nil, false
@@ -172,7 +172,7 @@ func (r *Route) RouteNode(path string) (node Node, parameters map[string]*PathPa
 			}
 		case NodeTypeRecursive:
 			if next == nil {
-				params[current.ParameterName()] = &PathParameter{value: part}
+				params[current.ParameterName()] = part
 			}
 
 			return current, params, false

@@ -14,7 +14,7 @@ type Request interface {
 	Request() *events.ALBTargetGroupRequest
 	Method() string
 	Path() string
-	PathParameter(name string) *PathParameter
+	PathParameter(name string) string
 	TraceId() string
 	UserAgent() string
 	Header() http.Header
@@ -25,24 +25,16 @@ type Request interface {
 	Body() buf.ByteBuf
 }
 
-type PathParameter struct {
-	value string
-}
-
-func (p *PathParameter) String() string {
-	return p.value
-}
-
 type request struct {
 	base           *events.ALBTargetGroupRequest
-	pathParameters map[string]*PathParameter
+	pathParameters map[string]string
 }
 
 func (r *request) Request() *events.ALBTargetGroupRequest {
 	return r.base
 }
 
-func newRequest(req events.ALBTargetGroupRequest, pathParameters map[string]*PathParameter) Request {
+func newRequest(req events.ALBTargetGroupRequest, pathParameters map[string]string) Request {
 	return &request{base: &req, pathParameters: pathParameters}
 }
 
@@ -54,12 +46,12 @@ func (r *request) Path() string {
 	return r.base.Path
 }
 
-func (r *request) PathParameter(name string) *PathParameter {
+func (r *request) PathParameter(name string) string {
 	if v, f := r.pathParameters[name]; f {
 		return v
 	}
 
-	return nil
+	return ""
 }
 
 func (r *request) TraceId() string {
