@@ -58,25 +58,23 @@ func TestRoute_SetEndpoint(t *testing.T) {
 		SetEndpoint("/auth/group/user/:user_id/book/:book", &DefaultEmptyHandler{}, &DefaultJSONHandler{}).
 		SetEndpoint("/auth/group/user/:user_id/profile", &DefaultEmptyHandler{}).
 		SetEndpoint("/bad", &DefaultBadHandler{}).
-		SetEndpoint("/wild/*", &DefaultWildHandler{})
+		SetEndpoint("/wild/*", &DefaultWildHandler{}).
+		SetEndpoint("/case/wild/*", &DefaultWildHandler{})
 
 	node, parameters, _ := route.RouteNode("/auth/group/user/123")
 	assert.NotNil(t, node)
 	assert.Equal(t, 2, len(node.Handlers()))
 	assert.Equal(t, "123", parameters["user_id"])
-	println(node.(*_Node).path())
 
 	node, parameters, _ = route.RouteNode("/auth/group/user/123/book")
 	assert.NotNil(t, node)
 	assert.Equal(t, 2, len(node.Handlers()))
 	assert.Equal(t, "", parameters["book"])
-	println(node.(*_Node).path())
 
 	node, parameters, _ = route.RouteNode("/auth/group/user/123/book/newbook")
 	assert.NotNil(t, node)
 	assert.Equal(t, 2, len(node.Handlers()))
 	assert.Equal(t, "newbook", parameters["book"])
-	println(node.(*_Node).path())
 
 	node, parameters, _ = route.RouteNode("/auth/group/user")
 	assert.NotNil(t, node)

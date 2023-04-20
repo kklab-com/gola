@@ -2,6 +2,7 @@ package gola
 
 import (
 	"fmt"
+	"sort"
 	"strings"
 )
 
@@ -35,10 +36,19 @@ type _Node struct {
 func (n *_Node) path() string {
 	rtn := ""
 	var current Node = n
+	if current.NodeType() == NodeTypeRoot {
+		return "/"
+	}
+
 	for {
-		if current.NodeType() == NodeTypeEndPoint {
+		switch current.NodeType() {
+		case NodeTypeRoot:
+			rtn = fmt.Sprintf("/%s", rtn)
+		case NodeTypeEndPoint:
 			rtn = fmt.Sprintf("%s/:%s/%s", current.Name(), current.ParameterName(), rtn)
-		} else {
+		case NodeTypeRecursive:
+			rtn = fmt.Sprintf("%s/%s*", current.Name(), rtn)
+		case NodeTypeNamespace:
 			rtn = fmt.Sprintf("%s/%s", current.Name(), rtn)
 		}
 
@@ -89,7 +99,7 @@ func NewRoute() *Route {
 	}}
 }
 
-func (r *Route) traverse(node Node, result map[string]string) {
+func (r *Route) traverse(node Node, result map[string]int) {
 	if len(node.Children()) > 0 {
 		for _, n := range node.Children() {
 			r.traverse(n, result)
@@ -97,16 +107,29 @@ func (r *Route) traverse(node Node, result map[string]string) {
 	}
 
 	switch node.NodeType() {
-	case NodeTypeRoot:
-	case NodeTypeEndPoint:
+	case NodeTypeRoot, NodeTypeEndPoint:
+		result[node.(*_Node).path()] = 1
 	case NodeTypeRecursive:
-	case NodeTypeNamespace:
+		result[node.(*_Node).path()] = 1
 	}
 }
 
 func (r *Route) String() string {
-	r.root.Children()
-	return ""
+	traverse := map[string]int{}
+	r.traverse(r.root, traverse)
+	var paths []string
+	for path := range traverse {
+		paths = append(paths, path)
+	}
+
+	sort.Strings(paths)
+	rtn := ""
+	for _, path := range paths {
+		rtn = fmt.Sprintf("%s\n%s", rtn, path)
+	}
+
+	rtn = strings.TrimLeft(rtn, "\n")
+	return rtn
 }
 
 func (r *Route) SetRootHandlers(handlers ...Handler) *Route {
