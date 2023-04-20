@@ -1,6 +1,7 @@
 package gola
 
 import (
+	"fmt"
 	"strings"
 )
 
@@ -29,6 +30,21 @@ type _Node struct {
 	handlers      []Handler
 	children      map[string]Node
 	nodeType      NodeType
+}
+
+func (n *_Node) path() string {
+	rtn := ""
+	var current Node = n
+	for {
+		rtn = fmt.Sprintf("%s/%s", current.Name(), rtn)
+		if current.Parent() == nil {
+			break
+		}
+
+		current = current.Parent()
+	}
+
+	return strings.TrimRight(rtn, "/")
 }
 
 func (n *_Node) Parent() Node {
