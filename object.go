@@ -11,6 +11,7 @@ import (
 )
 
 type Request interface {
+	Request() *events.ALBTargetGroupRequest
 	Method() string
 	Path() string
 	PathParameter(name string) *PathParameter
@@ -35,6 +36,10 @@ func (p *PathParameter) String() string {
 type request struct {
 	base           *events.ALBTargetGroupRequest
 	pathParameters map[string]*PathParameter
+}
+
+func (r *request) Request() *events.ALBTargetGroupRequest {
+	return r.base
 }
 
 func newRequest(req events.ALBTargetGroupRequest, pathParameters map[string]*PathParameter) Request {
