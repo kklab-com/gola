@@ -14,7 +14,7 @@ type GoLA struct {
 	NotFoundHandler, ServerErrorHandler Handler
 }
 
-func NewGoLA() *GoLA {
+func NewServe() *GoLA {
 	return &GoLA{
 		route:              NewRoute(),
 		NotFoundHandler:    &DefaultNotFoundHandler{},

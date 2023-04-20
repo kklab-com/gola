@@ -50,7 +50,7 @@ func (d *DefaultBadHandler) Run(ctx context.Context, request Request, response R
 }
 
 func TestRoute_SetEndpoint(t *testing.T) {
-	goLA := NewGoLA()
+	goLA := NewServe()
 	route := goLA.Route()
 	route.SetRootHandlers([]Handler{&DefaultRootHandler{}})
 	route.
