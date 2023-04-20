@@ -1,6 +1,7 @@
 package gola
 
 import (
+	"encoding/json"
 	"fmt"
 	"sort"
 	"strings"
@@ -123,13 +124,8 @@ func (r *Route) String() string {
 	}
 
 	sort.Strings(paths)
-	rtn := ""
-	for _, path := range paths {
-		rtn = fmt.Sprintf("%s\n%s", rtn, path)
-	}
-
-	rtn = strings.TrimLeft(rtn, "\n")
-	return rtn
+	marshal, _ := json.Marshal(paths)
+	return string(marshal)
 }
 
 func (r *Route) SetRootHandlers(handlers ...Handler) *Route {
