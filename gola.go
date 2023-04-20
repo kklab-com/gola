@@ -119,7 +119,7 @@ type DefaultCORSHandler struct {
 
 func (d *DefaultCORSHandler) Run(ctx context.Context, request Request, response Response) (er error) {
 	headers := map[string]string{}
-	if v := request.GetHeader(httpheadername.Origin); v == "null" {
+	if v := request.GetHeader(httpheadername.Origin); v == "null" || v == "" {
 		response.AddHeader(httpheadername.AccessControlAllowOrigin, "*")
 	} else {
 		response.AddHeader(httpheadername.AccessControlAllowOrigin, v)
