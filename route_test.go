@@ -13,7 +13,7 @@ import (
 type DefaultRootHandler struct {
 }
 
-func (d *DefaultRootHandler) Run(ctx context.Context, request Request, response Response) error {
+func (d *DefaultRootHandler) Run(ctx context.Context, request Request, response Response) (er error) {
 	response.SetHeader("ROOT", "VAL")
 	return nil
 }
@@ -21,7 +21,7 @@ func (d *DefaultRootHandler) Run(ctx context.Context, request Request, response 
 type DefaultEmptyHandler struct {
 }
 
-func (d *DefaultEmptyHandler) Run(ctx context.Context, request Request, response Response) error {
+func (d *DefaultEmptyHandler) Run(ctx context.Context, request Request, response Response) (er error) {
 	response.SetContentType("text/plain")
 	return nil
 }
@@ -29,7 +29,7 @@ func (d *DefaultEmptyHandler) Run(ctx context.Context, request Request, response
 type DefaultJSONHandler struct {
 }
 
-func (d *DefaultJSONHandler) Run(ctx context.Context, request Request, response Response) error {
+func (d *DefaultJSONHandler) Run(ctx context.Context, request Request, response Response) (er error) {
 	response.JSONResponse(buf.EmptyByteBuf().WriteString("{}"))
 	return nil
 }
@@ -37,7 +37,7 @@ func (d *DefaultJSONHandler) Run(ctx context.Context, request Request, response 
 type DefaultWildHandler struct {
 }
 
-func (d *DefaultWildHandler) Run(ctx context.Context, request Request, response Response) error {
+func (d *DefaultWildHandler) Run(ctx context.Context, request Request, response Response) (er error) {
 	response.JSONResponse(buf.EmptyByteBuf().WriteString("{\"type\":1}"))
 	return nil
 }
@@ -45,7 +45,7 @@ func (d *DefaultWildHandler) Run(ctx context.Context, request Request, response 
 type DefaultBadHandler struct {
 }
 
-func (d *DefaultBadHandler) Run(ctx context.Context, request Request, response Response) error {
+func (d *DefaultBadHandler) Run(ctx context.Context, request Request, response Response) (er error) {
 	return erresponse.ServerErrorCacheOperationFail
 }
 

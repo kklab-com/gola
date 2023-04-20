@@ -78,13 +78,13 @@ func CORSHelper(request Request, response Response) {
 }
 
 type Handler interface {
-	Run(ctx context.Context, request Request, response Response) error
+	Run(ctx context.Context, request Request, response Response) (er error)
 }
 
 type DefaultHandler struct {
 }
 
-func (d *DefaultHandler) Run(ctx context.Context, request Request, response Response) error {
+func (d *DefaultHandler) Run(ctx context.Context, request Request, response Response) (er error) {
 	CORSHelper(request, response)
 	response.SetContentType("text/plain")
 	return nil
@@ -93,7 +93,7 @@ func (d *DefaultHandler) Run(ctx context.Context, request Request, response Resp
 type DefaultNotFoundHandler struct {
 }
 
-func (d *DefaultNotFoundHandler) Run(ctx context.Context, request Request, response Response) error {
+func (d *DefaultNotFoundHandler) Run(ctx context.Context, request Request, response Response) (er error) {
 	CORSHelper(request, response)
 	response.
 		SetStatusCode(erresponse.NotFound.ErrorStatusCode()).
@@ -105,7 +105,7 @@ func (d *DefaultNotFoundHandler) Run(ctx context.Context, request Request, respo
 type DefaultServerErrorHandler struct {
 }
 
-func (d *DefaultServerErrorHandler) Run(ctx context.Context, request Request, response Response) error {
+func (d *DefaultServerErrorHandler) Run(ctx context.Context, request Request, response Response) (er error) {
 	CORSHelper(request, response)
 	response.
 		SetStatusCode(erresponse.ServerError.ErrorStatusCode()).
