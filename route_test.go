@@ -52,13 +52,13 @@ func (d *DefaultBadHandler) Run(ctx context.Context, request Request, response R
 func TestRoute_SetEndpoint(t *testing.T) {
 	goLA := NewServe()
 	route := goLA.Route()
-	route.SetRootHandlers([]Handler{&DefaultRootHandler{}})
+	route.SetRootHandlers(&DefaultRootHandler{})
 	route.
-		SetEndpoint([]Handler{&DefaultEmptyHandler{}}, "/auth/group/user/:user_id").
-		SetEndpoint([]Handler{&DefaultEmptyHandler{}, &DefaultJSONHandler{}}, "/auth/group/user/:user_id/book/:book").
-		SetEndpoint([]Handler{&DefaultEmptyHandler{}}, "/auth/group/user/:user_id/profile").
-		SetEndpoint([]Handler{&DefaultBadHandler{}}, "/bad").
-		SetEndpoint([]Handler{&DefaultWildHandler{}}, "/wild/*")
+		SetEndpoint("/auth/group/user/:user_id", &DefaultEmptyHandler{}).
+		SetEndpoint("/auth/group/user/:user_id/book/:book", &DefaultEmptyHandler{}, &DefaultJSONHandler{}).
+		SetEndpoint("/auth/group/user/:user_id/profile", &DefaultEmptyHandler{}).
+		SetEndpoint("/bad", &DefaultBadHandler{}).
+		SetEndpoint("/wild/*", &DefaultWildHandler{})
 
 	node, parameters, _ := route.RouteNode("/auth/group/user/123")
 	assert.NotNil(t, node)

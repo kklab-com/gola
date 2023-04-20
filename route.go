@@ -68,12 +68,12 @@ func NewRoute() *Route {
 	}}
 }
 
-func (r *Route) SetRootHandlers(handlers []Handler) *Route {
+func (r *Route) SetRootHandlers(handlers ...Handler) *Route {
 	r.root.(*_Node).handlers = handlers
 	return r
 }
 
-func (r *Route) SetEndpoint(handlers []Handler, path string) *Route {
+func (r *Route) SetEndpoint(path string, handlers ...Handler) *Route {
 	path = strings.TrimLeft(strings.TrimRight(path, "/"), "/")
 	if path == "" {
 		r.root.(*_Node).handlers = handlers
