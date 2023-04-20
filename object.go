@@ -149,6 +149,7 @@ func (r *response) Build() *events.ALBTargetGroupResponse {
 		code = 200
 	}
 
+	albResp.Headers = map[string]string{}
 	albResp.MultiValueHeaders = r.headers
 	albResp.StatusCode = code
 	albResp.Body = base64.StdEncoding.EncodeToString(r.body.Bytes())
