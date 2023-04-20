@@ -113,3 +113,26 @@ func (d *DefaultServerErrorHandler) Run(ctx context.Context, request Request, re
 
 	return nil
 }
+
+type DefaultCORSHandler struct {
+}
+
+func (d *DefaultCORSHandler) Run(ctx context.Context, request Request, response Response) (er error) {
+	headers := map[string]string{}
+	if v := request.GetHeader(httpheadername.Origin); v == "null" {
+		response.AddHeader(httpheadername.AccessControlAllowOrigin, "*")
+	} else {
+		response.AddHeader(httpheadername.AccessControlAllowOrigin, v)
+	}
+
+	if str := request.GetHeader(httpheadername.AccessControlRequestHeaders); str != "" {
+		response.AddHeader(httpheadername.AccessControlAllowHeaders, str)
+	}
+
+	if str := request.GetHeader(httpheadername.AccessControlRequestMethod); str != "" {
+		response.AddHeader(httpheadername.AccessControlAllowMethods, str)
+		headers["access-control-allow-methods"] = str
+	}
+
+	return nil
+}
