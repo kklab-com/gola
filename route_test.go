@@ -54,7 +54,7 @@ func TestRoute_SetEndpoint(t *testing.T) {
 	route := goLA.Route()
 	route.SetRootHandlers(&DefaultRootHandler{})
 	route.
-		SetEndpoint("/auth/group/user/:user_id", &DefaultEmptyHandler{}).
+		SetEndpoint("/auth/group/user/:user_id", &DefaultCORSHandler{}, &DefaultEmptyHandler{}).
 		SetEndpoint("/auth/group/user/:user_id/book/:book", &DefaultEmptyHandler{}, &DefaultJSONHandler{}).
 		SetEndpoint("/auth/group/user/:user_id/profile", &DefaultEmptyHandler{}).
 		SetEndpoint("/bad", &DefaultBadHandler{}).
@@ -62,7 +62,7 @@ func TestRoute_SetEndpoint(t *testing.T) {
 
 	node, parameters, _ := route.RouteNode("/auth/group/user/123")
 	assert.NotNil(t, node)
-	assert.Equal(t, 1, len(node.Handlers()))
+	assert.Equal(t, 2, len(node.Handlers()))
 	assert.Equal(t, "123", parameters["user_id"])
 
 	node, parameters, _ = route.RouteNode("/auth/group/user/123/book")
@@ -77,7 +77,7 @@ func TestRoute_SetEndpoint(t *testing.T) {
 
 	node, parameters, _ = route.RouteNode("/auth/group/user")
 	assert.NotNil(t, node)
-	assert.Equal(t, 1, len(node.Handlers()))
+	assert.Equal(t, 2, len(node.Handlers()))
 	assert.Equal(t, "", parameters["user"])
 	assert.Equal(t, "", parameters["book"])
 
@@ -99,7 +99,7 @@ func TestRoute_SetEndpoint(t *testing.T) {
 	assert.Equal(t, 1, len(parameters))
 	assert.Equal(t, NodeTypeRecursive, node.NodeType())
 
-	response, err := goLA.Register(nil, events.ALBTargetGroupRequest{Path: "/auth/group/user/123"})
+	response, err := goLA.Register(nil, events.ALBTargetGroupRequest{Path: "/auth/group/user/123", HTTPMethod: "OPTIONS", MultiValueHeaders: map[string][]string{"access-control-request-headers": {"content-type"}, "access-control-request-method": {"POST"}}})
 	assert.NotNil(t, response)
 	assert.Equal(t, 200, response.StatusCode)
 	assert.Nil(t, err)

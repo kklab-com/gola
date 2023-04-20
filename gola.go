@@ -118,7 +118,6 @@ type DefaultCORSHandler struct {
 }
 
 func (d *DefaultCORSHandler) Run(ctx context.Context, request Request, response Response) (er error) {
-	headers := map[string]string{}
 	if v := request.GetHeader(httpheadername.Origin); v == "null" || v == "" {
 		response.AddHeader(httpheadername.AccessControlAllowOrigin, "*")
 	} else {
@@ -131,7 +130,6 @@ func (d *DefaultCORSHandler) Run(ctx context.Context, request Request, response 
 
 	if str := request.GetHeader(httpheadername.AccessControlRequestMethod); str != "" {
 		response.AddHeader(httpheadername.AccessControlAllowMethods, str)
-		headers["access-control-allow-methods"] = str
 	}
 
 	return nil

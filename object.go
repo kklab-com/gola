@@ -3,6 +3,7 @@ package gola
 import (
 	"encoding/base64"
 	"net/http"
+	"net/textproto"
 
 	"github.com/aws/aws-lambda-go/events"
 	httpheadername "github.com/kklab-com/gone-httpheadername"
@@ -35,6 +36,20 @@ func (r *request) Request() *events.ALBTargetGroupRequest {
 }
 
 func newRequest(req events.ALBTargetGroupRequest, pathParameters map[string]string) Request {
+	headers := map[string]string{}
+	for k, v := range req.Headers {
+		headers[textproto.CanonicalMIMEHeaderKey(k)] = v
+	}
+
+	req.Headers = headers
+	mHeaders := http.Header{}
+	for key, values := range req.MultiValueHeaders {
+		for _, val := range values {
+			mHeaders.Add(key, val)
+		}
+	}
+
+	req.MultiValueHeaders = mHeaders
 	return &request{base: &req, pathParameters: pathParameters}
 }
 
@@ -63,11 +78,11 @@ func (r *request) Header() http.Header {
 }
 
 func (r *request) GetHeader(name string) string {
-	return http.Header(r.base.MultiValueHeaders).Get(name)
+	return r.Header().Get(name)
 }
 
 func (r *request) GetHeaders(name string) []string {
-	return http.Header(r.base.MultiValueHeaders).Values(name)
+	return r.Header().Values(name)
 }
 
 func (r *request) QueryValue(name string) string {
