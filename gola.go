@@ -64,7 +64,7 @@ func wrapErrorResponse(err erresponse.ErrorResponse, resp Response) {
 
 func CORSHelper(request Request, response Response) {
 	headers := map[string]string{}
-	if v := request.GetHeader(httpheadername.Origin); v == "null" || v == "" {
+	if v := request.GetHeader(httpheadername.Origin); v == "null" {
 		response.AddHeader(httpheadername.AccessControlAllowOrigin, "*")
 	} else {
 		response.AddHeader(httpheadername.AccessControlAllowOrigin, v)
@@ -121,19 +121,6 @@ type DefaultCORSHandler struct {
 }
 
 func (d *DefaultCORSHandler) Run(ctx context.Context, request Request, response Response) (er error) {
-	if v := request.GetHeader(httpheadername.Origin); v == "null" || v == "" {
-		response.AddHeader(httpheadername.AccessControlAllowOrigin, "*")
-	} else {
-		response.AddHeader(httpheadername.AccessControlAllowOrigin, v)
-	}
-
-	if str := request.GetHeader(httpheadername.AccessControlRequestHeaders); str != "" {
-		response.AddHeader(httpheadername.AccessControlAllowHeaders, str)
-	}
-
-	if str := request.GetHeader(httpheadername.AccessControlRequestMethod); str != "" {
-		response.AddHeader(httpheadername.AccessControlAllowMethods, str)
-	}
-
+	CORSHelper(request, response)
 	return nil
 }
