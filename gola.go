@@ -102,6 +102,8 @@ func (g *GoLA) Register(ctx context.Context, request events.ALBTargetGroupReques
 						err, stop = g.funcExecutor(httpHandler.Trace, ctx, request, response)
 					case request.Method() == http.MethodConnect:
 						err, stop = g.funcExecutor(httpHandler.Connect, ctx, request, response)
+					default:
+						err, stop = erresponse.MethodNotAllowed, true
 					}
 
 					if err != nil || stop {
