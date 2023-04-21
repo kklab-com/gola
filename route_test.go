@@ -27,9 +27,17 @@ func (d *DefaultEmptyHandler) Run(ctx context.Context, request Request, response
 }
 
 type DefaultJSONHandler struct {
+	t *testing.T
 }
 
 func (d *DefaultJSONHandler) Run(ctx context.Context, request Request, response Response) (er error) {
+	if request.Path() == "/auth/group/user/123/book/book1" {
+		assert.Equal(d.t, "123", request.PathParameter("user_id"))
+		assert.Equal(d.t, "book1", request.PathParameter("book"))
+	}
+
+	response.SetHeader("USER_ID", request.PathParameter("user_id"))
+	response.SetHeader("BOOK_ID", request.PathParameter("book"))
 	response.JSONResponse(buf.EmptyByteBuf().WriteString("{}"))
 	return nil
 }
@@ -54,8 +62,10 @@ func TestRoute_SetEndpoint(t *testing.T) {
 	route := goLA.Route()
 	route.SetRootHandlers(&DefaultRootHandler{})
 	route.
+		// :user_id is path parameter, get it by request.PathParameter("user_id") in Handler
 		SetEndpoint("/auth/group/user/:user_id", &DefaultCORSHandler{}, &DefaultEmptyHandler{}).
-		SetEndpoint("/auth/group/user/:user_id/book/:book", &DefaultEmptyHandler{}, &DefaultJSONHandler{}).
+		// :user_id, :book are path parameter, get it by request.PathParameter("user_id"), request.PathParameter("book") in Handler
+		SetEndpoint("/auth/group/user/:user_id/book/:book", &DefaultEmptyHandler{}, &DefaultJSONHandler{t: t}).
 		SetEndpoint("/auth/group/user/:user_id/profile", &DefaultEmptyHandler{}).
 		SetEndpoint("/bad", &DefaultBadHandler{}).
 		SetEndpoint("/wild/*", &DefaultWildHandler{}).
@@ -100,7 +110,12 @@ func TestRoute_SetEndpoint(t *testing.T) {
 	assert.Equal(t, 1, len(parameters))
 	assert.Equal(t, NodeTypeRecursive, node.NodeType())
 
-	response, err := goLA.Register(nil, events.ALBTargetGroupRequest{Path: "/auth/group/user/123", HTTPMethod: "OPTIONS", MultiValueHeaders: map[string][]string{"access-control-request-headers": {"content-type"}, "access-control-request-method": {"POST"}}})
+	response, err := goLA.Register(nil, events.ALBTargetGroupRequest{Path: "/auth/group/user/123/book/book1", HTTPMethod: "OPTIONS", MultiValueHeaders: map[string][]string{"access-control-request-headers": {"content-type"}, "access-control-request-method": {"POST"}}})
+	assert.NotNil(t, response)
+	assert.Equal(t, 200, response.StatusCode)
+	assert.Nil(t, err)
+
+	response, err = goLA.Register(nil, events.ALBTargetGroupRequest{Path: "/auth/group/user/123", HTTPMethod: "OPTIONS", MultiValueHeaders: map[string][]string{"access-control-request-headers": {"content-type"}, "access-control-request-method": {"POST"}}})
 	assert.NotNil(t, response)
 	assert.Equal(t, 200, response.StatusCode)
 	assert.Nil(t, err)
