@@ -2,12 +2,15 @@ package gola
 
 import (
 	"context"
+	"fmt"
 	"net/http"
+	"sync/atomic"
 
 	"github.com/aws/aws-lambda-go/events"
 	httpheadername "github.com/kklab-com/gone-httpheadername"
 	buf "github.com/kklab-com/goth-bytebuf"
 	erresponse "github.com/kklab-com/goth-erresponse"
+	kkpanic "github.com/kklab-com/goth-panic"
 )
 
 type GoLA struct {
@@ -39,48 +42,82 @@ func (g *GoLA) Register(ctx context.Context, request events.ALBTargetGroupReques
 		lErr = g.NotFoundHandler.Run(ctx, req, resp)
 	} else {
 		ctx = context.WithValue(ctx, "gola-node", node)
+		stopSig := &atomic.Bool{}
 		for _, handler := range node.Handlers() {
+			if stopSig.Load() {
+				break
+			}
+
 			lErr = func(handler Handler, ctx context.Context, request Request, response Response, isLast bool) error {
 				var err error
+				stop := false
 				if httpHandler, ok := handler.(HttpHandler); ok {
-					if err = g.funcExecutor(httpHandler.Before, ctx, req, resp); err != nil {
+					defer func(handler HttpHandler, ctx context.Context, request Request, response Response) {
+						if r := recover(); r != nil {
+							erErr := &ErrorResponseImpl{
+								ErrorResponse: erresponse.ServerErrorPanic,
+							}
+
+							switch er := r.(type) {
+							case *kkpanic.CaughtImpl:
+								erErr.Caught = er
+							default:
+								erErr.Caught = kkpanic.Convert(er)
+							}
+
+							handler.ErrorCaught(ctx, req, resp, erErr)
+							wrapErrorResponse(erErr, resp)
+						}
+
+					}(httpHandler, ctx, req, resp)
+
+					if err, stop = g.funcExecutor(httpHandler.Before, ctx, req, resp); err != nil {
+						stopSig.Store(stop)
 						return err
 					}
 
 					switch {
 					case request.Method() == http.MethodGet:
 						if isLast {
-							if err = g.funcExecutor(httpHandler.Index, ctx, request, response); err == nil {
+							if err, stop = g.funcExecutor(httpHandler.Index, ctx, request, response); err == nil {
 								break
 							} else if err != NotImplemented {
+								stopSig.Store(stop)
 								return err
 							}
 						}
 
-						err = g.funcExecutor(httpHandler.Get, ctx, request, response)
+						err, stop = g.funcExecutor(httpHandler.Get, ctx, request, response)
 					case request.Method() == http.MethodPost:
-						err = g.funcExecutor(httpHandler.Post, ctx, request, response)
+						err, stop = g.funcExecutor(httpHandler.Post, ctx, request, response)
 					case request.Method() == http.MethodPut:
-						err = g.funcExecutor(httpHandler.Put, ctx, request, response)
+						err, stop = g.funcExecutor(httpHandler.Put, ctx, request, response)
 					case request.Method() == http.MethodDelete:
-						err = g.funcExecutor(httpHandler.Delete, ctx, request, response)
+						err, stop = g.funcExecutor(httpHandler.Delete, ctx, request, response)
 					case request.Method() == http.MethodOptions:
-						err = g.funcExecutor(httpHandler.Options, ctx, request, response)
+						err, stop = g.funcExecutor(httpHandler.Options, ctx, request, response)
 					case request.Method() == http.MethodPatch:
-						err = g.funcExecutor(httpHandler.Patch, ctx, request, response)
+						err, stop = g.funcExecutor(httpHandler.Patch, ctx, request, response)
 					case request.Method() == http.MethodTrace:
-						err = g.funcExecutor(httpHandler.Trace, ctx, request, response)
+						err, stop = g.funcExecutor(httpHandler.Trace, ctx, request, response)
 					case request.Method() == http.MethodConnect:
-						err = g.funcExecutor(httpHandler.Connect, ctx, request, response)
+						err, stop = g.funcExecutor(httpHandler.Connect, ctx, request, response)
 					}
 
-					if err = g.funcExecutor(httpHandler.After, ctx, req, resp); err != nil {
+					if err != nil || stop {
+						stopSig.Store(stop)
+						return err
+					}
+
+					if err, stop = g.funcExecutor(httpHandler.After, ctx, req, resp); err != nil {
+						stopSig.Store(stop)
 						return err
 					}
 				} else {
-					err = g.funcExecutor(handler.Run, ctx, req, resp)
+					err, stop = g.funcExecutor(handler.Run, ctx, req, resp)
 				}
 
+				stopSig.Store(stop)
 				return err
 			}(handler, ctx, req, resp, isLast)
 		}
@@ -89,26 +126,26 @@ func (g *GoLA) Register(ctx context.Context, request events.ALBTargetGroupReques
 	return *resp.Build(), lErr
 }
 
-func (g *GoLA) funcExecutor(f func(ctx context.Context, request Request, response Response) error, ctx context.Context, request Request, response Response) error {
+func (g *GoLA) funcExecutor(f func(ctx context.Context, request Request, response Response) error, ctx context.Context, request Request, response Response) (er error, stop bool) {
 	if err := f(ctx, request, response); err != nil {
 		if err == NotImplemented {
-			return err
+			return err, false
 		}
 
 		ctx = context.WithValue(ctx, "gola-handler-error", err)
 		if response.StatusCode() != 0 {
-			return err
+			return err, true
 		} else {
 			if v, ok := err.(erresponse.ErrorResponse); ok {
 				wrapErrorResponse(v, response)
-				return nil
+				return nil, true
 			} else {
-				return g.ServerErrorHandler.Run(ctx, request, response)
+				return g.ServerErrorHandler.Run(ctx, request, response), true
 			}
 		}
 	}
 
-	return nil
+	return nil, false
 }
 
 func wrapErrorResponse(err erresponse.ErrorResponse, resp Response) {
@@ -133,6 +170,15 @@ func CORSHelper(request Request, response Response) {
 		response.AddHeader(httpheadername.AccessControlAllowMethods, str)
 		headers["access-control-allow-methods"] = str
 	}
+}
+
+type ErrorResponseImpl struct {
+	erresponse.ErrorResponse
+	Caught *kkpanic.CaughtImpl `json:"caught,omitempty"`
+}
+
+func (e *ErrorResponseImpl) String() string {
+	return e.Caught.String()
 }
 
 type Handler interface {
@@ -160,6 +206,7 @@ type HttpHandler interface {
 	Connect(ctx context.Context, request Request, response Response) (er error)
 	Before(ctx context.Context, request Request, response Response) (er error)
 	After(ctx context.Context, request Request, response Response) (er error)
+	ErrorCaught(ctx context.Context, request Request, response Response, err erresponse.ErrorResponse)
 }
 
 type DefaultHttpHandler struct {
@@ -208,6 +255,10 @@ func (h *DefaultHttpHandler) Before(ctx context.Context, request Request, respon
 
 func (h *DefaultHttpHandler) After(ctx context.Context, request Request, response Response) (er error) {
 	return nil
+}
+
+func (h *DefaultHttpHandler) ErrorCaught(ctx context.Context, request Request, response Response, err erresponse.ErrorResponse) {
+	println(err.(fmt.Stringer).String())
 }
 
 type DefaultNotFoundHandler struct {
