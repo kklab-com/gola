@@ -27,6 +27,7 @@ func (g *GoLA) Route() *Route {
 }
 
 func (g *GoLA) Register(ctx context.Context, request events.ALBTargetGroupRequest) (events.ALBTargetGroupResponse, error) {
+	ctx = context.WithValue(ctx, "gola", g)
 	node, parameters, _ := g.route.RouteNode(request.Path)
 	req := newRequest(request, parameters)
 	resp := newResponse()
@@ -34,6 +35,7 @@ func (g *GoLA) Register(ctx context.Context, request events.ALBTargetGroupReques
 		err := g.NotFoundHandler.Run(ctx, req, resp)
 		return *resp.Build(), err
 	} else {
+		ctx = context.WithValue(ctx, "gola-node", node)
 		for _, handler := range node.Handlers() {
 			if err := handler.Run(ctx, req, resp); err != nil {
 				if resp.StatusCode() == 0 {
