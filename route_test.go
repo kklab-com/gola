@@ -110,22 +110,22 @@ func TestRoute_SetEndpoint(t *testing.T) {
 	assert.Equal(t, 1, len(parameters))
 	assert.Equal(t, NodeTypeRecursive, node.NodeType())
 
-	response, err := goLA.Register(nil, events.ALBTargetGroupRequest{Path: "/auth/group/user/123/book/book1", HTTPMethod: "OPTIONS", MultiValueHeaders: map[string][]string{"access-control-request-headers": {"content-type"}, "access-control-request-method": {"POST"}}})
+	response, err := goLA.Register(context.Background(), events.ALBTargetGroupRequest{Path: "/auth/group/user/123/book/book1", HTTPMethod: "OPTIONS", MultiValueHeaders: map[string][]string{"access-control-request-headers": {"content-type"}, "access-control-request-method": {"POST"}}})
 	assert.NotNil(t, response)
 	assert.Equal(t, 200, response.StatusCode)
 	assert.Nil(t, err)
 
-	response, err = goLA.Register(nil, events.ALBTargetGroupRequest{Path: "/auth/group/user/123", HTTPMethod: "OPTIONS", MultiValueHeaders: map[string][]string{"access-control-request-headers": {"content-type"}, "access-control-request-method": {"POST"}}})
+	response, err = goLA.Register(context.Background(), events.ALBTargetGroupRequest{Path: "/auth/group/user/123", HTTPMethod: "OPTIONS", MultiValueHeaders: map[string][]string{"access-control-request-headers": {"content-type"}, "access-control-request-method": {"POST"}}})
 	assert.NotNil(t, response)
 	assert.Equal(t, 200, response.StatusCode)
 	assert.Nil(t, err)
 
-	response, err = goLA.Register(nil, events.ALBTargetGroupRequest{Path: "/auth/group/user/123/goodgame"})
+	response, err = goLA.Register(context.Background(), events.ALBTargetGroupRequest{Path: "/auth/group/user/123/goodgame"})
 	assert.NotNil(t, response)
 	assert.Equal(t, 404, response.StatusCode)
 	assert.Nil(t, err)
 
-	response, err = goLA.Register(nil, events.ALBTargetGroupRequest{Path: "/bad"})
+	response, err = goLA.Register(context.Background(), events.ALBTargetGroupRequest{Path: "/bad"})
 	assert.NotNil(t, response)
 	assert.Equal(t, 500, response.StatusCode)
 	assert.Nil(t, err)
