@@ -65,8 +65,8 @@ func (g *GoLA) Register(ctx context.Context, request events.ALBTargetGroupReques
 								erErr.Caught = kkpanic.Convert(er)
 							}
 
-							handler.ErrorCaught(ctx, req, resp, erErr)
 							wrapErrorResponse(erErr, resp)
+							handler.ErrorCaught(ctx, req, resp, erErr)
 						}
 
 					}(httpHandler, ctx, req, resp)
