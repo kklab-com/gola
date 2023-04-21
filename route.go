@@ -245,5 +245,9 @@ func (r *Route) RouteNode(path string) (node Node, parameters map[string]string,
 		}
 	}
 
+	if current.NodeType() == NodeTypeNamespace {
+		return nil, nil, false
+	}
+
 	return current, params, current == next
 }

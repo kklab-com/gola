@@ -72,6 +72,7 @@ func TestGoLA_Register(t *testing.T) {
 	route.SetEndpoint("/auth/group/noIndex/:noIndex", &GOLATestRegisterNoIndexHandler{})
 	route.SetEndpoint("/auth/group/bad", &GOLATestRegisterBadHandler{}, &GOLATestRegisterBadAfterHandler{t: t})
 	route.SetEndpoint("/auth/group/panic", &GOLATestRegisterPanicHandler{})
+	route.SetEndpoint("/auth/abc/cde", &GOLATestRegisterHandler{})
 	response, err := goLA.Register(context.Background(), events.ALBTargetGroupRequest{Path: "/auth/group/user/123", HTTPMethod: "OPTIONS", MultiValueHeaders: map[string][]string{"access-control-request-headers": {"content-type"}, "access-control-request-method": {"POST"}}})
 	assert.Equal(t, 200, response.StatusCode)
 	assert.Equal(t, base64.StdEncoding.EncodeToString([]byte("OPTIONS")), response.Body)
@@ -104,4 +105,21 @@ func TestGoLA_Register(t *testing.T) {
 	response, err = goLA.Register(context.Background(), events.ALBTargetGroupRequest{Path: "/auth/group/panic", HTTPMethod: "GET", MultiValueHeaders: map[string][]string{"access-control-request-headers": {"content-type"}, "access-control-request-method": {"POST"}}})
 	assert.Equal(t, 500, response.StatusCode)
 	assert.Nil(t, err)
+
+	response, err = goLA.Register(context.Background(), events.ALBTargetGroupRequest{Path: "/auth/abc", HTTPMethod: "GET", MultiValueHeaders: map[string][]string{"access-control-request-headers": {"content-type"}, "access-control-request-method": {"POST"}}})
+	assert.Equal(t, 404, response.StatusCode)
+	assert.Nil(t, err)
+
+	response, err = goLA.Register(context.Background(), events.ALBTargetGroupRequest{Path: "/auth/abc/ccc", HTTPMethod: "GET", MultiValueHeaders: map[string][]string{"access-control-request-headers": {"content-type"}, "access-control-request-method": {"POST"}}})
+	assert.Equal(t, 404, response.StatusCode)
+	assert.Nil(t, err)
+
+	response, err = goLA.Register(context.Background(), events.ALBTargetGroupRequest{Path: "/auth/abc/cde", HTTPMethod: "GET", MultiValueHeaders: map[string][]string{"access-control-request-headers": {"content-type"}, "access-control-request-method": {"POST"}}})
+	assert.Equal(t, 200, response.StatusCode)
+	assert.Nil(t, err)
+
+	response, err = goLA.Register(context.Background(), events.ALBTargetGroupRequest{Path: "/auth/abc/cde/123", HTTPMethod: "GET", MultiValueHeaders: map[string][]string{"access-control-request-headers": {"content-type"}, "access-control-request-method": {"POST"}}})
+	assert.Equal(t, 200, response.StatusCode)
+	assert.Nil(t, err)
+
 }
