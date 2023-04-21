@@ -41,7 +41,8 @@ type DefaultJSONHandler struct {
 }
 
 func (d *DefaultJSONHandler) Run(ctx context.Context, request Request, response Response) (er error) {
-    response.SetHeader("USER_ID", )
+    response.SetHeader("USER_ID", request.PathParameter("user_id"))
+    response.SetHeader("BOOK_ID", request.PathParameter("book"))
     response.JSONResponse(buf.EmptyByteBuf().WriteString("{}"))
     return nil
 }
