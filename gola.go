@@ -158,20 +158,18 @@ func wrapErrorResponse(err erresponse.ErrorResponse, resp Response) {
 }
 
 func CORSHelper(request Request, response Response) {
-	headers := map[string]string{}
 	if v := request.GetHeader(httpheadername.Origin); v == "null" {
-		response.AddHeader(httpheadername.AccessControlAllowOrigin, "*")
+		response.SetHeader(httpheadername.AccessControlAllowOrigin, "*")
 	} else {
-		response.AddHeader(httpheadername.AccessControlAllowOrigin, v)
+		response.SetHeader(httpheadername.AccessControlAllowOrigin, v)
 	}
 
 	if str := request.GetHeader(httpheadername.AccessControlRequestHeaders); str != "" {
-		response.AddHeader(httpheadername.AccessControlAllowHeaders, str)
+		response.SetHeader(httpheadername.AccessControlAllowHeaders, str)
 	}
 
 	if str := request.GetHeader(httpheadername.AccessControlRequestMethod); str != "" {
-		response.AddHeader(httpheadername.AccessControlAllowMethods, str)
-		headers["access-control-allow-methods"] = str
+		response.SetHeader(httpheadername.AccessControlAllowMethods, str)
 	}
 }
 
