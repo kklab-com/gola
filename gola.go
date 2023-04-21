@@ -38,6 +38,7 @@ func (g *GoLA) Register(ctx context.Context, request events.ALBTargetGroupReques
 		ctx = context.WithValue(ctx, "gola-node", node)
 		for _, handler := range node.Handlers() {
 			if err := handler.Run(ctx, req, resp); err != nil {
+				ctx = context.WithValue(ctx, "gola-handler-error", err)
 				if resp.StatusCode() == 0 {
 					if v, ok := err.(erresponse.ErrorResponse); ok {
 						wrapErrorResponse(v, resp)
