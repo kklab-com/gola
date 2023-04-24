@@ -14,12 +14,14 @@ import (
 
 type GoLA struct {
 	route                               *Route
+	ctxInjectMap                        map[any]any
 	NotFoundHandler, ServerErrorHandler Handler
 }
 
 func NewServe() *GoLA {
 	return &GoLA{
 		route:              NewRoute(),
+		ctxInjectMap:       map[any]any{},
 		NotFoundHandler:    &DefaultNotFoundHandler{},
 		ServerErrorHandler: &DefaultServerErrorHandler{},
 	}
@@ -27,6 +29,11 @@ func NewServe() *GoLA {
 
 func (g *GoLA) Route() *Route {
 	return g.route
+}
+
+func (g *GoLA) ContextInject(key any, value any) *GoLA {
+	g.ctxInjectMap[key] = value
+	return g
 }
 
 var NotImplemented = erresponse.NotImplemented
@@ -44,6 +51,10 @@ func (g *GoLA) Register(ctx context.Context, request events.ALBTargetGroupReques
 	node, parameters, isLast := g.route.RouteNode(request.Path)
 	req := newRequest(request, parameters)
 	resp := newResponse()
+	for k, v := range g.ctxInjectMap {
+		ctx = context.WithValue(ctx, k, v)
+	}
+
 	var lErr error
 	if node == nil {
 		lErr = g.NotFoundHandler.Run(ctx, req, resp)
@@ -108,6 +119,18 @@ type Handler interface {
 }
 
 type DefaultHandler struct {
+}
+
+func (d *DefaultHandler) GoLA(ctx context.Context) *GoLA {
+	return ctx.Value(CtxGoLA).(*GoLA)
+}
+
+func (d *DefaultHandler) Node(ctx context.Context) Node {
+	return ctx.Value(CtxGoLANode).(Node)
+}
+
+func (d *DefaultHandler) IsLastNode(ctx context.Context) bool {
+	return ctx.Value(CtxGoLANodeLast).(bool)
 }
 
 func (d *DefaultHandler) Run(ctx context.Context, request Request, response Response) (er error) {

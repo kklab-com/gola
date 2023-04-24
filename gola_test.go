@@ -16,6 +16,11 @@ type GOLATestRegisterHandler struct {
 }
 
 func (h *GOLATestRegisterHandler) Index(ctx context.Context, request Request, response Response) (er error) {
+	t := ctx.Value("t").(*testing.T)
+	assert.NotNil(t, h.GoLA(ctx))
+	assert.NotNil(t, h.Node(ctx))
+	assert.True(t, h.IsLastNode(ctx))
+	assert.True(t, ctx.Value(CtxGoLANodeLast).(bool))
 	response.SetBody(buf.NewByteBufString("INDEX"))
 	return
 }
@@ -26,6 +31,7 @@ func (h *GOLATestRegisterHandler) Options(ctx context.Context, request Request, 
 }
 
 func (h *GOLATestRegisterHandler) Get(ctx context.Context, request Request, response Response) (er error) {
+	assert.False(ctx.Value("t").(*testing.T), ctx.Value(CtxGoLANodeLast).(bool))
 	response.SetBody(buf.NewByteBufString("GET"))
 	return
 }
@@ -67,6 +73,7 @@ func (h *GOLATestRegisterPanicHandler) Get(ctx context.Context, request Request,
 
 func TestGoLA_Register(t *testing.T) {
 	goLA := NewServe()
+	goLA.ContextInject("t", t)
 	route := goLA.Route()
 	route.SetEndpoint("/auth/group/user/:user_id", &GOLATestRegisterHandler{})
 	route.SetEndpoint("/auth/group/noIndex/:noIndex", &GOLATestRegisterNoIndexHandler{})
