@@ -13,17 +13,19 @@ import (
 )
 
 type GoLA struct {
-	route                               *Route
-	ctxInjectMap                        map[any]any
-	NotFoundHandler, ServerErrorHandler Handler
+	route                                                            *Route
+	ctxInjectMap                                                     map[any]any
+	BeginHandler, NotFoundHandler, ServerErrorHandler, FinishHandler Handler
 }
 
 func NewServe() *GoLA {
 	return &GoLA{
 		route:              NewRoute(),
 		ctxInjectMap:       map[any]any{},
+		BeginHandler:       &DefaultEmptyHandler{},
 		NotFoundHandler:    &DefaultNotFoundHandler{},
 		ServerErrorHandler: &DefaultServerErrorHandler{},
+		FinishHandler:      &DefaultEmptyHandler{},
 	}
 }
 
@@ -55,6 +57,10 @@ func (g *GoLA) Register(ctx context.Context, request events.ALBTargetGroupReques
 		ctx = context.WithValue(ctx, k, v)
 	}
 
+	if err := g.BeginHandler.Run(ctx, req, resp); err != nil {
+		panic(err)
+	}
+
 	var lErr error
 	if node == nil {
 		lErr = g.NotFoundHandler.Run(ctx, req, resp)
@@ -78,6 +84,10 @@ func (g *GoLA) Register(ctx context.Context, request events.ALBTargetGroupReques
 				break
 			}
 		}
+	}
+
+	if err := g.FinishHandler.Run(ctx, req, resp); err != nil {
+		panic(err)
 	}
 
 	return *resp.Build(), lErr
@@ -276,6 +286,14 @@ func (h *DefaultHttpHandler) After(ctx context.Context, request Request, respons
 
 func (h *DefaultHttpHandler) ErrorCaught(ctx context.Context, request Request, response Response, err erresponse.ErrorResponse) {
 	println(err.(fmt.Stringer).String())
+}
+
+type DefaultEmptyHandler struct {
+	DefaultHandler
+}
+
+func (d *DefaultEmptyHandler) Run(ctx context.Context, request Request, response Response) (er error) {
+	return nil
 }
 
 type DefaultNotFoundHandler struct {

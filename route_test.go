@@ -18,10 +18,10 @@ func (d *DefaultRootHandler) Run(ctx context.Context, request Request, response 
 	return nil
 }
 
-type DefaultEmptyHandler struct {
+type TestDefaultEmptyHandler struct {
 }
 
-func (d *DefaultEmptyHandler) Run(ctx context.Context, request Request, response Response) (er error) {
+func (d *TestDefaultEmptyHandler) Run(ctx context.Context, request Request, response Response) (er error) {
 	response.SetContentType("text/plain")
 	return nil
 }
@@ -63,10 +63,10 @@ func TestRoute_SetEndpoint(t *testing.T) {
 	route.SetRootHandlers(&DefaultRootHandler{})
 	route.
 		// :user_id is path parameter, get it by request.PathParameter("user_id") in Handler
-		SetEndpoint("/auth/group/user/:user_id", &DefaultCORSHandler{}, &DefaultEmptyHandler{}).
+		SetEndpoint("/auth/group/user/:user_id", &DefaultCORSHandler{}, &TestDefaultEmptyHandler{}).
 		// :user_id, :book are path parameter, get it by request.PathParameter("user_id"), request.PathParameter("book") in Handler
-		SetEndpoint("/auth/group/user/:user_id/book/:book", &DefaultEmptyHandler{}, &DefaultJSONHandler{t: t}).
-		SetEndpoint("/auth/group/user/:user_id/profile", &DefaultEmptyHandler{}).
+		SetEndpoint("/auth/group/user/:user_id/book/:book", &TestDefaultEmptyHandler{}, &DefaultJSONHandler{t: t}).
+		SetEndpoint("/auth/group/user/:user_id/profile", &TestDefaultEmptyHandler{}).
 		SetEndpoint("/bad", &DefaultBadHandler{}).
 		SetEndpoint("/wild/*", &DefaultWildHandler{}).
 		SetEndpoint("/case/wild/*", &DefaultWildHandler{})
