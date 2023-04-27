@@ -65,10 +65,15 @@ func (h *GOLATestRegisterBadAfterHandler) Get(ctx context.Context, request Reque
 
 type GOLATestRegisterPanicHandler struct {
 	DefaultHttpHandler
+	t *testing.T
 }
 
 func (h *GOLATestRegisterPanicHandler) Get(ctx context.Context, request Request, response Response) (er error) {
 	panic("panic")
+}
+
+func (h *GOLATestRegisterPanicHandler) ErrorCaught(ctx context.Context, request Request, response Response, err erresponse.ErrorResponse) {
+	assert.Equal(h.t, 500, err.ErrorStatusCode())
 }
 
 func TestGoLA_Register(t *testing.T) {
@@ -78,7 +83,7 @@ func TestGoLA_Register(t *testing.T) {
 	route.SetEndpoint("/auth/group/user/:user_id", &GOLATestRegisterHandler{})
 	route.SetEndpoint("/auth/group/noIndex/:noIndex", &GOLATestRegisterNoIndexHandler{})
 	route.SetEndpoint("/auth/group/bad", &GOLATestRegisterBadHandler{}, &GOLATestRegisterBadAfterHandler{t: t})
-	route.SetEndpoint("/auth/group/panic", &GOLATestRegisterPanicHandler{})
+	route.SetEndpoint("/auth/group/panic", &GOLATestRegisterPanicHandler{t: t})
 	route.SetEndpoint("/auth/abc/cde", &GOLATestRegisterHandler{})
 	response, err := goLA.Register(context.Background(), events.ALBTargetGroupRequest{Path: "/auth/group/user/123", HTTPMethod: "OPTIONS", MultiValueHeaders: map[string][]string{"access-control-request-headers": {"content-type"}, "access-control-request-method": {"POST"}}})
 	assert.Equal(t, 200, response.StatusCode)
