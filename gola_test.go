@@ -36,6 +36,18 @@ func (h *GOLATestRegisterHandler) Get(ctx context.Context, request Request, resp
 	return
 }
 
+func (h *GOLATestRegisterHandler) Create(ctx context.Context, request Request, response Response) (er error) {
+	assert.True(ctx.Value("t").(*testing.T), ctx.Value(CtxGoLANodeLast).(bool))
+	response.SetBody(buf.NewByteBufString("CREATE"))
+	return
+}
+
+func (h *GOLATestRegisterHandler) Post(ctx context.Context, request Request, response Response) (er error) {
+	assert.False(ctx.Value("t").(*testing.T), ctx.Value(CtxGoLANodeLast).(bool))
+	response.SetBody(buf.NewByteBufString("POST"))
+	return
+}
+
 type GOLATestRegisterNoIndexHandler struct {
 	DefaultHttpHandler
 }
@@ -98,6 +110,16 @@ func TestGoLA_Register(t *testing.T) {
 	response, err = goLA.Register(context.Background(), events.ALBTargetGroupRequest{Path: "/auth/group/user/", HTTPMethod: "GET", MultiValueHeaders: map[string][]string{"access-control-request-headers": {"content-type"}, "access-control-request-method": {"POST"}}})
 	assert.Equal(t, 200, response.StatusCode)
 	assert.Equal(t, base64.StdEncoding.EncodeToString([]byte("INDEX")), response.Body)
+	assert.Nil(t, err)
+
+	response, err = goLA.Register(context.Background(), events.ALBTargetGroupRequest{Path: "/auth/group/user/123", HTTPMethod: "POST", MultiValueHeaders: map[string][]string{"access-control-request-headers": {"content-type"}, "access-control-request-method": {"POST"}}})
+	assert.Equal(t, 200, response.StatusCode)
+	assert.Equal(t, base64.StdEncoding.EncodeToString([]byte("POST")), response.Body)
+	assert.Nil(t, err)
+
+	response, err = goLA.Register(context.Background(), events.ALBTargetGroupRequest{Path: "/auth/group/user/", HTTPMethod: "POST", MultiValueHeaders: map[string][]string{"access-control-request-headers": {"content-type"}, "access-control-request-method": {"POST"}}})
+	assert.Equal(t, 200, response.StatusCode)
+	assert.Equal(t, base64.StdEncoding.EncodeToString([]byte("CREATE")), response.Body)
 	assert.Nil(t, err)
 
 	response, err = goLA.Register(context.Background(), events.ALBTargetGroupRequest{Path: "/auth/group/user", HTTPMethod: "GET", MultiValueHeaders: map[string][]string{"access-control-request-headers": {"content-type"}, "access-control-request-method": {"POST"}}})

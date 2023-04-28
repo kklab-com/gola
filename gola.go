@@ -152,6 +152,7 @@ func (d *DefaultHandler) Run(ctx context.Context, request Request, response Resp
 type HttpHandler interface {
 	Index(ctx context.Context, request Request, response Response) (er error)
 	Get(ctx context.Context, request Request, response Response) (er error)
+	Create(ctx context.Context, request Request, response Response) (er error)
 	Post(ctx context.Context, request Request, response Response) (er error)
 	Put(ctx context.Context, request Request, response Response) (er error)
 	Delete(ctx context.Context, request Request, response Response) (er error)
@@ -212,6 +213,14 @@ func (h *DefaultHttpHandler) Run(ctx context.Context, request Request, response 
 
 		err = httpHandler.Get(ctx, request, response)
 	case request.Method() == http.MethodPost:
+		if ctx.Value(CtxGoLANodeLast).(bool) {
+			if err = httpHandler.Create(ctx, request, response); err == nil {
+				break
+			} else if err != NotImplemented {
+				return err
+			}
+		}
+
 		err = httpHandler.Post(ctx, request, response)
 	case request.Method() == http.MethodPut:
 		err = httpHandler.Put(ctx, request, response)
@@ -246,6 +255,10 @@ func (h *DefaultHttpHandler) Index(ctx context.Context, request Request, respons
 
 func (h *DefaultHttpHandler) Get(ctx context.Context, request Request, response Response) (er error) {
 	return nil
+}
+
+func (h *DefaultHttpHandler) Create(ctx context.Context, request Request, response Response) (er error) {
+	return NotImplemented
 }
 
 func (h *DefaultHttpHandler) Post(ctx context.Context, request Request, response Response) (er error) {
