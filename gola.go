@@ -38,6 +38,14 @@ func (g *GoLA) ContextInject(key any, value any) *GoLA {
 	return g
 }
 
+func (g *GoLA) Context(key any) any {
+	if v, f := g.ctxInjectMap[key]; f {
+		return v
+	}
+
+	return nil
+}
+
 var NotImplemented = erresponse.NotImplemented
 
 const (
