@@ -50,6 +50,7 @@ var NotImplemented = erresponse.NotImplemented
 
 const (
 	CtxGoLA             = "gola"
+	CtxGoLAParams       = "gola-params"
 	CtxGoLANode         = "gola-node"
 	CtxGoLANodeLast     = "gola-node-last"
 	CtxGoLAHandler      = "gola-handler"
@@ -58,6 +59,7 @@ const (
 
 func (g *GoLA) Register(ctx context.Context, request events.ALBTargetGroupRequest) (events.ALBTargetGroupResponse, error) {
 	ctx = context.WithValue(ctx, CtxGoLA, g)
+	ctx = context.WithValue(ctx, CtxGoLAParams, map[string]any{})
 	node, parameters, isLast := g.route.RouteNode(request.Path)
 	req := newRequest(request, parameters)
 	resp := newResponse()
@@ -149,6 +151,14 @@ func (d *DefaultHandler) Node(ctx context.Context) Node {
 
 func (d *DefaultHandler) IsLastNode(ctx context.Context) bool {
 	return ctx.Value(CtxGoLANodeLast).(bool)
+}
+
+func (d *DefaultHandler) GetParam(ctx context.Context, key string) any {
+	return ctx.Value(CtxGoLAParams).(map[string]any)[key]
+}
+
+func (d *DefaultHandler) SetParam(ctx context.Context, key string, value any) {
+	ctx.Value(CtxGoLAParams).(map[string]any)[key] = value
 }
 
 func (d *DefaultHandler) Run(ctx context.Context, request Request, response Response) (er error) {
