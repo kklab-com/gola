@@ -61,8 +61,8 @@ func (g *GoLA) Register(ctx context.Context, request events.ALBTargetGroupReques
 	ctx = context.WithValue(ctx, CtxGoLA, g)
 	ctx = context.WithValue(ctx, CtxGoLAParams, map[string]any{})
 	node, parameters, isLast := g.route.RouteNode(request.Path)
-	req := newRequest(request, parameters)
-	resp := newResponse()
+	req := NewRequest(request, parameters)
+	resp := NewResponse()
 	for k, v := range g.ctxInjectMap {
 		ctx = context.WithValue(ctx, k, v)
 	}

@@ -34,7 +34,7 @@ func (r *request) Request() *events.ALBTargetGroupRequest {
 	return r.base
 }
 
-func newRequest(req events.ALBTargetGroupRequest, pathParameters map[string]string) Request {
+func NewRequest(req events.ALBTargetGroupRequest, pathParameters map[string]string) Request {
 	mHeaders := http.Header{}
 	for key, values := range req.MultiValueHeaders {
 		for _, val := range values {
@@ -137,7 +137,7 @@ type response struct {
 	body    buf.ByteBuf
 }
 
-func newResponse() Response {
+func NewResponse() Response {
 	return &response{
 		code:    0,
 		headers: map[string][]string{},
